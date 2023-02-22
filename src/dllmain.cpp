@@ -32,16 +32,17 @@ void __declspec(naked) CurrResolution_CC()
 {
     __asm
     {
-        mov ecx, 276                // Original code
-        mov r12d, r9d               // Original code
-        mov rbx, rdx                // Original code
-        mov rdi, [rax + r8 * 0x8]   // Original code
-        mov[iCustomResX], r15d
-        mov[iCustomResY], r12d
+        mov ecx, 276                           // Original code
+        mov r12d, r9d                          // Original code
+        mov rbx, rdx                           // Original code
+        mov rdi, [rax + r8 * 0x8]              // Original code
+
+        mov[iCustomResX], r15d                 // Grab current resX
+        mov[iCustomResY], r12d                 // Grab current resY
         cvtsi2ss xmm14, r15d
         cvtsi2ss xmm15, r12d
         divss xmm14,xmm15
-        movss [fNewAspect], xmm14
+        movss [fNewAspect], xmm14              // Grab current aspect ratio
         xorps xmm14,xmm14
         xorps xmm15,xmm15
         jmp[CurrResolutionReturnJMP]
@@ -74,25 +75,25 @@ void __declspec(naked) AspectFix_CC()
 
 // Letterbox Hook
 DWORD64 LetterboxReturnJMP;
-int iLetterboxCounter = 4; // First 4 are top, bottom, left, right borders
+int iLetterboxCounter = 4;                      // First 4 are bottom, left, right, top borders
 void __declspec(naked) Letterbox_CC()
 {
     __asm
     {
-        cmp [iLetterboxCounter], 0
-        je originalCode
-        cmp byte ptr[r14 + 0x6C], 03
-        je disableLetterbox
-        jmp originalCode
+        cmp [iLetterboxCounter], 0              // Compare loop counter
+        je originalCode                         // jmp to original code if loop done
+        cmp byte ptr[r14 + 0x6C], 03            // compare draw flag
+        je disableLetterbox                     // jmp to disable letterbox loop
+        jmp originalCode                        // jmp just in case
 
         disableLetterbox:
-            dec [iLetterboxCounter]
-            mov byte ptr[r14 + 0x6C], 00    // Disable draw
-            jmp originalCode
+            dec [iLetterboxCounter]             // Decrease loop count down from 4
+            mov byte ptr[r14 + 0x6C], 00        // Set draw flag to 0
+            jmp originalCode                    // jmp and carry on
 
         originalCode:
-            mov r13d, [rbp + 0x00000088]
-            mov[rsp + 0x00000118], r12
+            mov r13d, [rbp + 0x00000088]        // Original code
+            mov[rsp + 0x00000118], r12          // Original code
             jmp[LetterboxReturnJMP]
     }
 }
@@ -106,23 +107,24 @@ void __declspec(naked) FOVFix_CC()
 {
     __asm
     {
-        fld dword ptr[rdx + 0x18]          // Push original FOV to FPU register st(0)
-        fmul[FOVPiDiv]                     // Multiply st(0) by Pi/360
-        fptan                              // Get partial tangent. Store result in st(1). Store 1.0 in st(0)
-        fxch st(1)                         // Swap st(1) to st(0)
-        fdiv[fNativeAspect]                // Divide st(0) by 1.778~
-        fmul[fNewAspect]                   // Multiply st(0) by new aspect ratio
-        fxch st(1)                         // Swap st(1) to st(0)
-        fpatan                             // Get partial arc tangent from st(0), st(1)
-        fmul[FOVDivPi]                     // Multiply st(0) by 360/Pi
-        fstp[FOVFinalValue]                // Store st(0) 
-        mov eax, [FOVFinalValue]           // Copy final FOV value to eax register
-        mov[rcx + 0x18], eax
-        mov eax, [rdx + 0x1C]
-        mov[rcx + 0x1C], eax
-        mov eax, [rdx + 0x20]
-        mov[rcx + 0x20], eax
-        jmp[FOVFixReturnJMP]
+        fld dword ptr[rdx + 0x18]               // Push original FOV to FPU register st(0)
+        fmul[FOVPiDiv]                          // Multiply st(0) by Pi/360
+        fptan                                   // Get partial tangent. Store result in st(1). Store 1.0 in st(0)
+        fxch st(1)                              // Swap st(1) to st(0)
+        fdiv[fNativeAspect]                     // Divide st(0) by 1.778~
+        fmul[fNewAspect]                        // Multiply st(0) by new aspect ratio
+        fxch st(1)                              // Swap st(1) to st(0)
+        fpatan                                  // Get partial arc tangent from st(0), st(1)
+        fmul[FOVDivPi]                          // Multiply st(0) by 360/Pi
+        fstp[FOVFinalValue]                     // Store st(0) 
+        mov eax, [FOVFinalValue]                // Copy final FOV value to eax register
+
+        mov[rcx + 0x18], eax                    // Original code
+        mov eax, [rdx + 0x1C]                   // Original code
+        mov[rcx + 0x1C], eax                    // Original code
+        mov eax, [rdx + 0x20]                   // Original code
+        mov[rcx + 0x20], eax                    // Original code
+        jmp[FOVFixReturnJMP] 
     }
 }
 
@@ -229,7 +231,6 @@ void AspectFOVFix()
             LOG_F(INFO, "Current Resolution: Pattern scan failed.");
         }
 
-
         uint8_t* AspectFixScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? 8B ?? ?? ?? ?? ?? 89 ?? ?? 0F ?? ?? ?? ?? ?? ?? 33 ?? ?? 83 ?? ??");
         if (AspectFixScanResult)
         {
@@ -309,6 +310,7 @@ void MaxFPS()
         if (MaxFPSScanResult)
         {
             DWORD64 MaxFPSAddress = (uintptr_t)MaxFPSScanResult + 0x5;
+            // NOP comiss instr
             Memory::PatchBytes(MaxFPSAddress, "\x90\x90\x90\x90\x90", 5);
             LOG_F(INFO, "MaxFPS: Patched byte(s) at 0x%" PRIxPTR, (uintptr_t)MaxFPSAddress);
         }
