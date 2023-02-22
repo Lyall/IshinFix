@@ -32,6 +32,10 @@ void __declspec(naked) CurrResolution_CC()
 {
     __asm
     {
+        mov ecx, 276                // Original code
+        mov r12d, r9d               // Original code
+        mov rbx, rdx                // Original code
+        mov rdi, [rax + r8 * 0x8]   // Original code
         mov[iCustomResX], r15d
         mov[iCustomResY], r12d
         cvtsi2ss xmm14, r15d
@@ -40,8 +44,6 @@ void __declspec(naked) CurrResolution_CC()
         movss [fNewAspect], xmm14
         xorps xmm14,xmm14
         xorps xmm15,xmm15
-        mov[rbx + 0x0000009C], r12d
-        mov[rbx + 0x000000A4], r12d
         jmp[CurrResolutionReturnJMP]
     }
 }
@@ -157,8 +159,6 @@ void ReadConfig()
     }
 
     iInjectionDelay = config.GetInteger("IshinFix Parameters", "InjectionDelay", 1000);
-    //iCustomResX = config.GetInteger("Custom Resolution", "Width", 0);
-    //iCustomResY = config.GetInteger("Custom Resolution", "Height", 0);
     bAspectFix = config.GetBoolean("Fix Aspect Ratio", "Enabled", true);
     bFOVFix = config.GetBoolean("Fix FOV", "Enabled", true);
     fAdditionalFOV = config.GetFloat("Fix FOV", "AdditionalFOV", (float)0);
@@ -208,16 +208,15 @@ void ReadConfig()
     LOG_F(INFO, "Config Parse: fNewAspect: %.4f", fNewAspect);
 }
 
-
 void AspectFOVFix()
 {
     if (bAspectFix)
     {
         iAspectFix = 1;
-        uint8_t* CurrResolutionScanResult = Memory::PatternScan(baseModule, "44 89 ?? ?? ?? ?? ?? 44 89 ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 ?? 0F 11 ?? ?? 0F 28 ?? ??");
+        uint8_t* CurrResolutionScanResult = Memory::PatternScan(baseModule, "33 ?? B9 ?? ?? ?? ?? 45 ?? ?? 48 ?? ?? 4A ?? ?? ?? 48 ?? ?? 8B ??");
         if (CurrResolutionScanResult)
         {
-            DWORD64 CurrResolutionAddress = (uintptr_t)CurrResolutionScanResult;
+            DWORD64 CurrResolutionAddress = (uintptr_t)CurrResolutionScanResult + 0x2;
             int CurrResolutionHookLength = Memory::GetHookLength((char*)CurrResolutionAddress, 13);
             CurrResolutionReturnJMP = CurrResolutionAddress + CurrResolutionHookLength;
             Memory::DetourFunction64((void*)CurrResolutionAddress, CurrResolution_CC, CurrResolutionHookLength);
@@ -234,7 +233,7 @@ void AspectFOVFix()
         uint8_t* AspectFixScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? 8B ?? ?? ?? ?? ?? 89 ?? ?? 0F ?? ?? ?? ?? ?? ?? 33 ?? ?? 83 ?? ??");
         if (AspectFixScanResult)
         {
-            DWORD64 AspectFixAddress = ((uintptr_t)AspectFixScanResult + 0x8);
+            DWORD64 AspectFixAddress = (uintptr_t)AspectFixScanResult + 0x8;
             int AspectFixHookLength = Memory::GetHookLength((char*)AspectFixAddress, 13);
             AspectFixReturnJMP = AspectFixAddress + AspectFixHookLength;
             Memory::DetourFunction64((void*)AspectFixAddress, AspectFix_CC, AspectFixHookLength);
@@ -272,7 +271,7 @@ void AspectFOVFix()
             FOVPiDiv = fPi / 360;
             FOVDivPi = 360 / fPi;
 
-            DWORD64 FOVFixAddress = ((uintptr_t)FOVFixScanResult - 0x27);
+            DWORD64 FOVFixAddress = (uintptr_t)FOVFixScanResult - 0x27;
             int FOVFixHookLength = Memory::GetHookLength((char*)FOVFixAddress, 13);
             FOVFixReturnJMP = FOVFixAddress + FOVFixHookLength;
             Memory::DetourFunction64((void*)FOVFixAddress, FOVFix_CC, FOVFixHookLength);
@@ -309,7 +308,7 @@ void MaxFPS()
         uint8_t* MaxFPSScanResult = Memory::PatternScan(baseModule, "EB ?? 48 ?? ?? 44 0F ?? ?? ?? 48 ?? ?? ?? ?? 73 ?? 80 ?? ?? ?? ?? ?? 00 74 ??");
         if (MaxFPSScanResult)
         {
-            DWORD64 MaxFPSAddress = (uintptr_t)(MaxFPSScanResult + 0x5);
+            DWORD64 MaxFPSAddress = (uintptr_t)MaxFPSScanResult + 0x5;
             Memory::PatchBytes(MaxFPSAddress, "\x90\x90\x90\x90\x90", 5);
             LOG_F(INFO, "MaxFPS: Patched byte(s) at 0x%" PRIxPTR, (uintptr_t)MaxFPSAddress);
         }
