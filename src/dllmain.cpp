@@ -162,7 +162,7 @@ void ReadConfig()
     bAspectFix = config.GetBoolean("Fix Aspect Ratio", "Enabled", true);
     bFOVFix = config.GetBoolean("Fix FOV", "Enabled", true);
     fAdditionalFOV = config.GetFloat("Fix FOV", "AdditionalFOV", (float)0);
-    bMaxFPS = config.GetBoolean("Remove Framerate Cap", "Enabled", false);
+    bMaxFPS = config.GetBoolean("Remove Framerate Cap", "Enabled", true);
 
     // Get game name and exe path
     LPWSTR exePath = new WCHAR[_MAX_PATH];
@@ -214,7 +214,6 @@ void AspectFOVFix()
     if (bAspectFix)
     {
         iAspectFix = 1;
-
         uint8_t* CurrResolutionScanResult = Memory::PatternScan(baseModule, "44 89 ?? ?? ?? ?? ?? 44 89 ?? ?? ?? ?? ?? E8 ?? ?? ?? ?? 0F 28 ?? 0F 11 ?? ?? 0F 28 ?? ??");
         if (CurrResolutionScanResult)
         {
