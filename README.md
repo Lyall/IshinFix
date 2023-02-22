@@ -6,6 +6,7 @@ This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Lik
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
+- Disable FPS cap. This removes the 30fps cap in cutscenes.
 
 ## Installation
 - Grab the latest release of IshinFix from [here.](https://github.com/Lyall/IshinFix/releases)
