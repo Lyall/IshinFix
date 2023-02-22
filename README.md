@@ -19,8 +19,6 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Known Issues
 Please report any issues you see.
 
-- When launching the game you may have the incorrect aspect ratio if your game resolution is wider than your desktop resolution. <br />Simply change resolution in game to fix it.
-
 ## Screenshots
 
 | ![ezgif-3-ffd6bc6ca3](https://user-images.githubusercontent.com/695941/220556346-b40c2d23-7c33-4545-abc5-32b8186507fb.gif) |
