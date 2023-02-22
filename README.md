@@ -24,7 +24,7 @@ Please report any issues you see.
 | Disabled pillarboxing in cutscenes. |
 
 ## Credits
-[Flawless Widescreen](https://www.flawlesswidescreen.org/) for the FOV LOD culling fix.<br />
+[Flawless Widescreen](https://www.flawlesswidescreen.org/) for the LOD fix.<br />
 [Ultimate ASI Loader](https://github.com/ThirteenAG/Ultimate-ASI-Loader) for ASI loading. <br />
 [inih](https://github.com/jtilly/inih) for ini reading. <br />
 [Loguru](https://github.com/emilk/loguru) for logging. <br />
