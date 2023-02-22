@@ -2,10 +2,11 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)</br>
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/IshinFix/total.svg)](https://github.com/Lyall/IshinFix/releases)
 
-This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Like a Dragon: Ishin!.
+This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Like a Dragon: Ishin!
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
+- Disable FPS cap. This removes the 30fps cap in cutscenes.
 
 ## Installation
 - Grab the latest release of IshinFix from [here.](https://github.com/Lyall/IshinFix/releases)
@@ -19,9 +20,13 @@ Please report any issues you see.
 
 ## Screenshots
 
-| ![ezgif-5-aa9dbbde3b](https://user-images.githubusercontent.com/695941/217569024-242b3e90-0c66-46de-9460-6e31eb476f5d.gif) |
+| ![ezgif-3-ffd6bc6ca3](https://user-images.githubusercontent.com/695941/220556346-b40c2d23-7c33-4545-abc5-32b8186507fb.gif) |
 |:--:|
-| Disabled pillarboxing in cutscenes. |
+| Disabled pillarboxing/letterboxing in gameplay. |
+
+| ![ezgif-3-cd50579b2d](https://user-images.githubusercontent.com/695941/220556453-ff9f70a9-e762-4351-9a29-b2c1a792aad9.gif) |
+|:--:|
+| Disabled pillarboxing/letterboxing in cutscenes. |
 
 ## Credits
 [Flawless Widescreen](https://www.flawlesswidescreen.org/) for the LOD fix.<br />
