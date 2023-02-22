@@ -9,7 +9,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 - Disable FPS cap. This removes the 30fps cap in cutscenes.
 
 ## Installation
-- ***Note:*** Please make sure any ultrawide-related hex edits or pak mods are removed/reverted first.
+- **Note:** ***Please make sure any ultrawide-related hex edits or pak mods are removed/reverted first***.
 - Grab the latest release of IshinFix from [here.](https://github.com/Lyall/IshinFix/releases)
 - Extract the contents of the release zip in to the the Win64 folder.<br />(e.g. "**steamapps\common\LikeADragonIshin\LikeaDragonIshin\Binaries\Win64**" for Steam).
 
