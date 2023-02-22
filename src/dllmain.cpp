@@ -156,7 +156,7 @@ void ReadConfig()
         LOG_F(ERROR, "Parse error: %d", config.ParseError());
     }
 
-    iInjectionDelay = config.GetInteger("IshinFix Parameters", "InjectionDelay", 2000);
+    iInjectionDelay = config.GetInteger("IshinFix Parameters", "InjectionDelay", 1000);
     //iCustomResX = config.GetInteger("Custom Resolution", "Width", 0);
     //iCustomResY = config.GetInteger("Custom Resolution", "Height", 0);
     bAspectFix = config.GetBoolean("Fix Aspect Ratio", "Enabled", true);
@@ -324,6 +324,7 @@ DWORD __stdcall Main(void*)
 {
     Logging();
     ReadConfig();
+    Sleep(iInjectionDelay);
     AspectFOVFix();
     MaxFPS();
     return true; // end thread
