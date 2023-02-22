@@ -2,13 +2,14 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)</br>
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/IshinFix/total.svg)](https://github.com/Lyall/IshinFix/releases)
 
-This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Like a Dragon: Ishin!
+This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays in Like a Dragon: Ishin!
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
 - Disable FPS cap. This removes the 30fps cap in cutscenes.
 
 ## Installation
+- **Note:** ***Please make sure any ultrawide-related hex edits or pak mods are removed/reverted first***.
 - Grab the latest release of IshinFix from [here.](https://github.com/Lyall/IshinFix/releases)
 - Extract the contents of the release zip in to the the Win64 folder.<br />(e.g. "**steamapps\common\LikeADragonIshin\LikeaDragonIshin\Binaries\Win64**" for Steam).
 
@@ -17,6 +18,8 @@ This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Lik
 
 ## Known Issues
 Please report any issues you see.
+
+- When launching the game you may have the incorrect aspect ratio if your game resolution is wider than your desktop resolution. <br />Simply change resolution in game to fix it.
 
 ## Screenshots
 
