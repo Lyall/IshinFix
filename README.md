@@ -18,7 +18,7 @@ This is a fix for pillarboxing/letterboxing with ultrawide/wider displays in Lik
 ## Known Issues
 Please report any issues you see.
 
-- First launch may have the incorrect aspect ratio if your game resolution is wider than your desktop. Simply change resolution in game to fix it.
+- When launching the game you may have the incorrect aspect ratio if your game resolution is wider than your desktop. <br />Simply change resolution in game to fix it.
 
 ## Screenshots
 
