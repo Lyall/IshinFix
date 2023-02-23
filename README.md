@@ -19,7 +19,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Known Issues
 Please report any issues you see.
 
-- Minigames may break with fps unlock enabled. ([#2](https://github.com/Lyall/IshinFix/issues/2))<br>
+- **Minigames may break with fps unlock enabled**. ([#2](https://github.com/Lyall/IshinFix/issues/2))<br>
 To fix this disable FPS unlock in the config ini. 
 
 ## Screenshots
