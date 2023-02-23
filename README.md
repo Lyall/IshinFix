@@ -6,7 +6,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
-- Disable FPS cap. This removes the 30fps cap in cutscenes.
+- Disable cutscene FPS cap. This removes the 30fps cap in cutscenes.
 
 ## Installation
 - **Note:** ***Please make sure any ultrawide-related hex edits or pak mods are removed/reverted first***.
@@ -18,9 +18,6 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 
 ## Known Issues
 Please report any issues you see.
-
-- Prize wheel minigame is bugged. The camera reverts to 16:9 and the FOV increases exponentially.<br>
-**I am looking in to this issue right now.**
 
 ## Screenshots
 
