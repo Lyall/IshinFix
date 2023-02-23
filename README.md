@@ -19,8 +19,8 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Known Issues
 Please report any issues you see.
 
-- Prize wheel minigame is bugged. The camera reverts to 16:9 and the FOV increases exponentially.<br>
-**I am looking in to this issue right now.**
+- Minigames may break with fps unlock enabled. (#2)<br>
+To fix this disable FPS unlock in the config. 
 
 ## Screenshots
 
