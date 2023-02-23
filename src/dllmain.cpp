@@ -9,17 +9,17 @@ HMODULE baseModule = GetModuleHandle(NULL);
 bool bAspectFix;
 bool bFOVFix;
 bool bMaxFPS;
-int iAspectFix = 0;
-int iFOVFix = 0;
 int iCustomResX;
 int iCustomResY;
 int iInjectionDelay;
 float fAdditionalFOV;
+int iAspectFix = (int)bAspectFix;
+int iFOVFix = (int)bFOVFix;
 
 // Variables
 float fNewX;
 float fNewY;
-float fNativeAspect = 1.777777791f;
+float fNativeAspect = (float)16/9;
 float fPi = 3.14159265358979323846f;
 float fNewAspect;
 string sExeName;
@@ -49,27 +49,72 @@ void __declspec(naked) CurrResolution_CC()
     }
 }
 
-// Aspect Ratio Hook
-DWORD64 AspectFixReturnJMP;
-void __declspec(naked) AspectFix_CC()
+// Aspect Ratio/FOV Hook
+DWORD64 AspectFOVFixReturnJMP;
+float FOVPiDiv;
+float FOVDivPi;
+float FOVFinalValue;
+void __declspec(naked) AspectFOVFix_CC()
 {
     __asm
     {
-        movss[rdi + 0x18], xmm0                // Original code
-        cmp[iAspectFix], 1                     // Check if aspect ratio fix enabled
-        je aspectratio                         // Jump to aspect ratio fix if enabled
-        mov eax, [rbx + 0x208]                 // Original code
-        mov [fNativeAspect], eax               // Grab native aspect
-        mov[rdi + 0x2C], eax                   // Original code
-        jmp[AspectFixReturnJMP]                // Jump back to game code
+        cmp [iFOVFix], 1
+        je modifyFOV
+        jmp originalCode
+
+        modifyFOV:
+            fld dword ptr[rbx + 0x1F8]         // Push original FOV to FPU register st(0)
+            fmul[FOVPiDiv]                     // Multiply st(0) by Pi/360
+            fptan                              // Get partial tangent. Store result in st(1). Store 1.0 in st(0)
+            fxch st(1)                         // Swap st(1) to st(0)
+            fdiv[fNativeAspect]                // Divide st(0) by 1.778~
+            fmul[fNewAspect]                   // Multiply st(0) by new aspect ratio
+            fxch st(1)                         // Swap st(1) to st(0)
+            fpatan                             // Get partial arc tangent from st(0), st(1)
+            fmul[FOVDivPi]                     // Multiply st(0) by 360/Pi
+            fstp[FOVFinalValue]                // Store st(0) 
+            movss xmm0, [FOVFinalValue]        // Copy final FOV value to xmm0
+            jmp originalCode
+
+        originalCode:
+            movss[rdi + 0x18], xmm0            // Original code
+            cmp [iAspectFix], 1
+            je modifyAspect
+            mov eax, [rbx + 0x00000208]        // Original code
+            mov[rdi + 0x2C], eax               // Original code
+            jmp [AspectFOVFixReturnJMP]
+
+        modifyAspect:
+            mov eax, [fNewAspect]
+            mov[rdi + 0x2C], eax               // Original code
+            jmp[AspectFOVFixReturnJMP]                         
+    }
+}
+
+// Minigame Aspect Ratio Hook
+DWORD64 MinigameAspectFixReturnJMP;
+float fGreaterAspect = 1.7f;
+void __declspec(naked) MinigameAspectFix_CC()
+{
+    __asm
+    {
+        cmp [iAspectFix], 1
+        jne originalCode
+        cmp eax, [fGreaterAspect]                     
+        jge modifyMinigameAspect                // Jump if aspect >1.7
+        jmp originalCode                        // Jump back to game code
 
         // Adjust aspect ratio
-        aspectratio:
-            mov eax, [rbx + 0x208]             // Original code
-            mov[fNativeAspect], eax            // Grab native aspect
-            mov eax, fNewAspect                // Copy new aspect ratio to eax
-            mov[rdi + 0x2C], eax               // Original code
-            jmp [AspectFixReturnJMP]           // Jump back to game code
+        modifyMinigameAspect:
+            mov eax, [fNewAspect]               // Move new aspect ratio to eax
+            jmp originalCode                    // Jump back to game code
+
+        originalCode:
+            mov[rdi + 0x3C], eax                // Original code
+            mov ecx, [rbx + 0x00002810]         // Original code
+            mov eax, [rdi + 0x40]               // Original code
+            and ecx, 02                         // Original code
+            jmp[MinigameAspectFixReturnJMP]
     }
 }
 
@@ -98,36 +143,6 @@ void __declspec(naked) Letterbox_CC()
     }
 }
 
-// FOV Hook
-DWORD64 FOVFixReturnJMP;
-float FOVPiDiv;
-float FOVDivPi;
-float FOVFinalValue;
-void __declspec(naked) FOVFix_CC()
-{
-    __asm
-    {
-        fld dword ptr[rdx + 0x18]               // Push original FOV to FPU register st(0)
-        fmul[FOVPiDiv]                          // Multiply st(0) by Pi/360
-        fptan                                   // Get partial tangent. Store result in st(1). Store 1.0 in st(0)
-        fxch st(1)                              // Swap st(1) to st(0)
-        fdiv[fNativeAspect]                     // Divide st(0) by 1.778~
-        fmul[fNewAspect]                        // Multiply st(0) by new aspect ratio
-        fxch st(1)                              // Swap st(1) to st(0)
-        fpatan                                  // Get partial arc tangent from st(0), st(1)
-        fmul[FOVDivPi]                          // Multiply st(0) by 360/Pi
-        fstp[FOVFinalValue]                     // Store st(0) 
-        mov eax, [FOVFinalValue]                // Copy final FOV value to eax register
-
-        mov[rcx + 0x18], eax                    // Original code
-        mov eax, [rdx + 0x1C]                   // Original code
-        mov[rcx + 0x1C], eax                    // Original code
-        mov eax, [rdx + 0x20]                   // Original code
-        mov[rcx + 0x20], eax                    // Original code
-        jmp[FOVFixReturnJMP] 
-    }
-}
-
 // FOV Culling Hook
 DWORD64 FOVCullingReturnJMP;
 float fOne = (float)1;
@@ -135,9 +150,9 @@ void __declspec(naked) FOVCulling_CC()
 {
     __asm
     {
-        movss xmm1, [fOne]
-        movss[rdx + 0x00000310], xmm1
-        movsd xmm0, [rbp + 0x000000E0]
+        movss xmm1, [fOne]                      // 90/90, there is undoubtedly a smarter way of doing this
+        movss[rdx + 0x00000310], xmm1           // Original code
+        movsd xmm0, [rbp + 0x000000E0]          // Original code
         jmp[FOVCullingReturnJMP]
     }
 }
@@ -214,7 +229,6 @@ void AspectFOVFix()
 {
     if (bAspectFix)
     {
-        iAspectFix = 1;
         uint8_t* CurrResolutionScanResult = Memory::PatternScan(baseModule, "33 ?? B9 ?? ?? ?? ?? 45 ?? ?? 48 ?? ?? 4A ?? ?? ?? 48 ?? ?? 8B ??");
         if (CurrResolutionScanResult)
         {
@@ -231,20 +245,49 @@ void AspectFOVFix()
             LOG_F(INFO, "Current Resolution: Pattern scan failed.");
         }
 
-        uint8_t* AspectFixScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? 8B ?? ?? ?? ?? ?? 89 ?? ?? 0F ?? ?? ?? ?? ?? ?? 33 ?? ?? 83 ?? ??");
-        if (AspectFixScanResult)
+        // Dumb
+        if (bAspectFix)
         {
-            DWORD64 AspectFixAddress = (uintptr_t)AspectFixScanResult + 0x8;
-            int AspectFixHookLength = Memory::GetHookLength((char*)AspectFixAddress, 13);
-            AspectFixReturnJMP = AspectFixAddress + AspectFixHookLength;
-            Memory::DetourFunction64((void*)AspectFixAddress, AspectFix_CC, AspectFixHookLength);
-
-            LOG_F(INFO, "Aspect Ratio: Hook length is %d bytes", AspectFixHookLength);
-            LOG_F(INFO, "Aspect Ratio: Hook address is 0x%" PRIxPTR, (uintptr_t)AspectFixAddress);
+            iAspectFix = 1;
         }
-        else if (!AspectFixScanResult)
+        if (bFOVFix)
         {
-            LOG_F(INFO, "Aspect Ratio: Pattern scan failed.");
+            iFOVFix = 1;
+        }
+
+        uint8_t* AspectFOVFixScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? 8B ?? ?? ?? ?? ?? 89 ?? ?? 0F ?? ?? ?? ?? ?? ?? 33 ?? ?? 83 ?? ??");
+        if (AspectFOVFixScanResult)
+        {
+            FOVPiDiv = fPi / 360;
+            FOVDivPi = 360 / fPi;
+
+            DWORD64 AspectFOVFixAddress = (uintptr_t)AspectFOVFixScanResult + 0x8;
+            int AspectFOVFixHookLength = Memory::GetHookLength((char*)AspectFOVFixAddress, 13);
+            AspectFOVFixReturnJMP = AspectFOVFixAddress + AspectFOVFixHookLength;
+            Memory::DetourFunction64((void*)AspectFOVFixAddress, AspectFOVFix_CC, AspectFOVFixHookLength);
+
+            LOG_F(INFO, "Aspect Ratio/FOV: Hook length is %d bytes", AspectFOVFixHookLength);
+            LOG_F(INFO, "Aspect Ratio/FOV: Hook address is 0x%" PRIxPTR, (uintptr_t)AspectFOVFixAddress);
+        }
+        else if (!AspectFOVFixScanResult)
+        {
+            LOG_F(INFO, "Aspect Ratio/FOV: Pattern scan failed.");
+        }
+
+        uint8_t* MinigameAspectFixScanResult = Memory::PatternScan(baseModule, "89 47 ?? 8B 8B ?? ?? ?? ?? 8B 47");
+        if (MinigameAspectFixScanResult)
+        {
+            DWORD64 MinigameAspectFixAddress = (uintptr_t)MinigameAspectFixScanResult;
+            int MinigameAspectFixHookLength = Memory::GetHookLength((char*)MinigameAspectFixAddress, 13);
+            MinigameAspectFixReturnJMP = MinigameAspectFixAddress + MinigameAspectFixHookLength;
+            Memory::DetourFunction64((void*)MinigameAspectFixAddress, MinigameAspectFix_CC, MinigameAspectFixHookLength);
+
+            LOG_F(INFO, "Minigame Aspect Ratio: Hook length is %d bytes", MinigameAspectFixHookLength);
+            LOG_F(INFO, "Minigame Aspect Ratio: Hook address is 0x%" PRIxPTR, (uintptr_t)MinigameAspectFixAddress);
+        }
+        else if (!MinigameAspectFixScanResult)
+        {
+            LOG_F(INFO, "Minigame Aspect Ratio: Pattern scan failed.");
         }
 
         uint8_t* LetterboxScanResult = Memory::PatternScan(baseModule, "44 8B ?? ?? ?? ?? ?? 4C 89 ?? ?? ?? ?? ?? ?? 4D 85 ?? 0F 84 ?? ?? ?? ??");
@@ -265,26 +308,6 @@ void AspectFOVFix()
 
     if (bFOVFix)
     {
-        iFOVFix = 1;
-        uint8_t* FOVFixScanResult = Memory::PatternScan(baseModule, "83 E0 ?? 31 41 ?? 8B 49 ?? 33 4A ?? 83 E1 ?? 31 4B");
-        if (FOVFixScanResult)
-        {
-            FOVPiDiv = fPi / 360;
-            FOVDivPi = 360 / fPi;
-
-            DWORD64 FOVFixAddress = (uintptr_t)FOVFixScanResult - 0x27;
-            int FOVFixHookLength = Memory::GetHookLength((char*)FOVFixAddress, 13);
-            FOVFixReturnJMP = FOVFixAddress + FOVFixHookLength;
-            Memory::DetourFunction64((void*)FOVFixAddress, FOVFix_CC, FOVFixHookLength);
-
-            LOG_F(INFO, "FOV: Hook length is %d bytes", FOVFixHookLength);
-            LOG_F(INFO, "FOV: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVFixAddress);
-        }
-        else if (!FOVFixScanResult)
-        {
-            LOG_F(INFO, "FOV: Pattern scan failed.");
-        }
-
         uint8_t* FOVCullingScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F2 0F ?? ?? ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? F2 0F ?? ?? ?? ?? 89 ?? ?? ?? 84 ?? 75 ??");
         if (FOVCullingScanResult)
         {
