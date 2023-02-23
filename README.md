@@ -20,7 +20,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 Please report any issues you see.
 
 - Minigames may break with fps unlock enabled. (#2)<br>
-To fix this disable FPS unlock in the config. 
+To fix this disable FPS unlock in the config ini. 
 
 ## Screenshots
 
