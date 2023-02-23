@@ -8,7 +8,7 @@ HMODULE baseModule = GetModuleHandle(NULL);
 // INI Variables
 bool bAspectFix;
 bool bFOVFix;
-bool bMaxFPS;
+bool bCutsceneFPS;
 int iCustomResX;
 int iCustomResY;
 int iInjectionDelay;
@@ -25,6 +25,7 @@ float fNewAspect;
 string sExeName;
 string sGameName;
 string sExePath;
+string sFixVer = "1.0.3";
 
 // CurrResolution Hook
 DWORD64 CurrResolutionReturnJMP;
@@ -161,6 +162,8 @@ void Logging()
 {
     loguru::add_file("IshinFix.log", loguru::Truncate, loguru::Verbosity_MAX);
     loguru::set_thread_name("Main");
+
+    LOG_F(INFO, "IshinFix v%s loaded", sFixVer.c_str());
 }
 
 void ReadConfig()
@@ -179,7 +182,7 @@ void ReadConfig()
     bAspectFix = config.GetBoolean("Fix Aspect Ratio", "Enabled", true);
     bFOVFix = config.GetBoolean("Fix FOV", "Enabled", true);
     fAdditionalFOV = config.GetFloat("Fix FOV", "AdditionalFOV", (float)0);
-    bMaxFPS = config.GetBoolean("Remove Framerate Cap", "Enabled", true);
+    bCutsceneFPS = config.GetBoolean("Remove Cutscene FPS Cap", "Enabled", false);
 
     // Get game name and exe path
     LPWSTR exePath = new WCHAR[_MAX_PATH];
@@ -217,7 +220,7 @@ void ReadConfig()
     LOG_F(INFO, "Config Parse: bAspectFix: %d", bAspectFix);
     LOG_F(INFO, "Config Parse: bFOVFix: %d", bFOVFix);
     LOG_F(INFO, "Config Parse: fAdditionalFOV: %.2f", fAdditionalFOV);
-    LOG_F(INFO, "Config Parse: bMaxFPS: %d", bMaxFPS);
+    LOG_F(INFO, "Config Parse: bCutsceneFPS: %d", bCutsceneFPS);
     LOG_F(INFO, "Config Parse: iCustomResX: %d", iCustomResX);
     LOG_F(INFO, "Config Parse: iCustomResY: %d", iCustomResY);
     LOG_F(INFO, "Config Parse: fNewX: %.2f", fNewX);
@@ -297,6 +300,7 @@ void AspectFOVFix()
             int LetterboxHookLength = Memory::GetHookLength((char*)LetterboxAddress, 13);
             LetterboxReturnJMP = LetterboxAddress + LetterboxHookLength;
             Memory::DetourFunction64((void*)LetterboxAddress, Letterbox_CC, LetterboxHookLength);
+
             LOG_F(INFO, "Letterbox: Hook length is %d bytes", LetterboxHookLength);
             LOG_F(INFO, "Letterbox: Hook address is 0x%" PRIxPTR, (uintptr_t)LetterboxAddress);
         }
@@ -315,6 +319,7 @@ void AspectFOVFix()
             int FOVCullingHookLength = Memory::GetHookLength((char*)FOVCullingAddress, 13);
             FOVCullingReturnJMP = FOVCullingAddress + FOVCullingHookLength;
             Memory::DetourFunction64((void*)FOVCullingAddress, FOVCulling_CC, FOVCullingHookLength);
+
             LOG_F(INFO, "FOV Culling: Hook length is %d bytes", FOVCullingHookLength);
             LOG_F(INFO, "FOV Culling: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVCullingAddress);
         }
@@ -325,21 +330,20 @@ void AspectFOVFix()
     }
 }
 
-void MaxFPS()
+void CutsceneFPS()
 {
-    if (bMaxFPS)
+    if (bCutsceneFPS)
     {
-        uint8_t* MaxFPSScanResult = Memory::PatternScan(baseModule, "EB ?? 48 ?? ?? 44 0F ?? ?? ?? 48 ?? ?? ?? ?? 73 ?? 80 ?? ?? ?? ?? ?? 00 74 ??");
-        if (MaxFPSScanResult)
+        uint8_t* CutsceneFPSScanResult = Memory::PatternScan(baseModule, "C7 ?? ?? ?? ?? ?? ?? 02 ?? ?? ?? FF ?? ?? ?? ?? ?? C6 ?? ?? ?? ?? ?? 01 48");
+        if (CutsceneFPSScanResult)
         {
-            DWORD64 MaxFPSAddress = (uintptr_t)MaxFPSScanResult + 0x5;
-            // NOP comiss instr
-            Memory::PatchBytes(MaxFPSAddress, "\x90\x90\x90\x90\x90", 5);
-            LOG_F(INFO, "MaxFPS: Patched byte(s) at 0x%" PRIxPTR, (uintptr_t)MaxFPSAddress);
+            DWORD64 CutsceneFPSAddress = (uintptr_t)CutsceneFPSScanResult + 0x7;
+            Memory::PatchBytes(CutsceneFPSAddress, "\x01", 1);
+            LOG_F(INFO, "CutsceneFPS: Patched byte(s) at 0x%" PRIxPTR, (uintptr_t)CutsceneFPSAddress);
         }
-        else if (!MaxFPSScanResult)
+        else if (!CutsceneFPSScanResult)
         {
-            LOG_F(INFO, "MaxFPS: Pattern scan failed.");
+            LOG_F(INFO, "CutsceneFPS: Pattern scan failed.");
         }
     }
 }
@@ -350,7 +354,7 @@ DWORD __stdcall Main(void*)
     ReadConfig();
     Sleep(iInjectionDelay);
     AspectFOVFix();
-    MaxFPS();
+    CutsceneFPS();
     return true; // end thread
 }
 
