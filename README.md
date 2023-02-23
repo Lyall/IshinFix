@@ -19,7 +19,8 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Known Issues
 Please report any issues you see.
 
-- When launching the game you may have the incorrect aspect ratio if your game resolution is wider than your desktop resolution. <br />Simply change resolution in game to fix it.
+- Prize wheel minigame is bugged. The camera reverts to 16:9 and the FOV increases exponentially.<br>
+**I am looking in to this issue right now.**
 
 ## Screenshots
 
