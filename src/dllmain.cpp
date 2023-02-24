@@ -5,6 +5,8 @@ using namespace std;
 
 HMODULE baseModule = GetModuleHandle(NULL);
 
+INIReader config;
+
 // INI Variables
 bool bAspectFix;
 bool bFOVFix;
@@ -27,6 +29,7 @@ float fNewAspect;
 string sExeName;
 string sGameName;
 string sExePath;
+string sGameVersion;
 string sFixVer = "1.0.4";
 
 // CurrResolution Hook
@@ -188,9 +191,31 @@ void Logging()
 
 void ReadConfig()
 {
+    // Get game name and exe path
+    LPWSTR exePath = new WCHAR[_MAX_PATH];
+    GetModuleFileNameW(baseModule, exePath, _MAX_PATH);
+    wstring exePathWString(exePath);
+    sExePath = string(exePathWString.begin(), exePathWString.end());
+    wstring wsGameName = Memory::GetVersionProductName();
+    sExeName = sExePath.substr(sExePath.find_last_of("/\\") + 1);
+    sGameName = string(wsGameName.begin(), wsGameName.end());
+
+    LOG_F(INFO, "Game Name: %s", sGameName.c_str());
+    LOG_F(INFO, "Game Path: %s", sExePath.c_str());
+
     // Initialize config
     // UE4 games use launchers so config path is relative to launcher
-    INIReader config(".\\LikeaDragonIshin\\Binaries\\Win64\\IshinFix.ini");
+    if (sExePath.find("WinGDK") != string::npos)
+    {
+        sGameVersion = "Microsoft Store";
+        INIReader config(".\\LikeaDragonIshin\\Binaries\\WinGDK\\IshinFix.ini");
+    }
+    else
+    {
+        sGameVersion = "Steam";
+        INIReader config(".\\LikeaDragonIshin\\Binaries\\Win64\\IshinFix.ini");
+    }
+    LOG_F(INFO, "Game Version: %s", sGameVersion.c_str());
 
     // Check if config failed to load
     if (config.ParseError() != 0) {
@@ -205,18 +230,6 @@ void ReadConfig()
     bCutsceneFPS = config.GetBoolean("Remove Cutscene FPS Cap", "Enabled", false);
     bControllerType = config.GetBoolean("Override Controller Icons", "Enabled", false);
     iControllerType = config.GetInteger("Override Controller Icons", "Type", 0);
-
-    // Get game name and exe path
-    LPWSTR exePath = new WCHAR[_MAX_PATH];
-    GetModuleFileNameW(baseModule, exePath, _MAX_PATH);
-    wstring exePathWString(exePath);
-    sExePath = string(exePathWString.begin(), exePathWString.end());
-    wstring wsGameName = Memory::GetVersionProductName();
-    sExeName = sExePath.substr(sExePath.find_last_of("/\\") + 1);
-    sGameName = string(wsGameName.begin(), wsGameName.end());
-
-    LOG_F(INFO, "Game Name: %s", sGameName.c_str());
-    LOG_F(INFO, "Game Path: %s", sExePath.c_str());
 
     // Custom resolution
     if (iCustomResX > 0 && iCustomResY > 0)
@@ -262,7 +275,7 @@ void AspectFOVFix()
             DWORD64 CurrResolutionAddress = (uintptr_t)CurrResolutionScanResult + 0x2;
             int CurrResolutionHookLength = Memory::GetHookLength((char*)CurrResolutionAddress, 13);
             CurrResolutionReturnJMP = CurrResolutionAddress + CurrResolutionHookLength;
-            Memory::DetourFunction64((void*)CurrResolutionAddress, CurrResolution_CC, CurrResolutionHookLength);
+            //Memory::DetourFunction64((void*)CurrResolutionAddress, CurrResolution_CC, CurrResolutionHookLength);
 
             LOG_F(INFO, "Current Resolution: Hook length is %d bytes", CurrResolutionHookLength);
             LOG_F(INFO, "Current Resolution: Hook address is 0x%" PRIxPTR, (uintptr_t)CurrResolutionAddress);
@@ -323,7 +336,7 @@ void AspectFOVFix()
             DWORD64 LetterboxAddress = (uintptr_t)LetterboxScanResult;
             int LetterboxHookLength = Memory::GetHookLength((char*)LetterboxAddress, 13);
             LetterboxReturnJMP = LetterboxAddress + LetterboxHookLength;
-            Memory::DetourFunction64((void*)LetterboxAddress, Letterbox_CC, LetterboxHookLength);
+            //Memory::DetourFunction64((void*)LetterboxAddress, Letterbox_CC, LetterboxHookLength);
 
             LOG_F(INFO, "Letterbox: Hook length is %d bytes", LetterboxHookLength);
             LOG_F(INFO, "Letterbox: Hook address is 0x%" PRIxPTR, (uintptr_t)LetterboxAddress);
@@ -342,7 +355,7 @@ void AspectFOVFix()
             DWORD64 FOVCullingAddress = (uintptr_t)FOVCullingScanResult;
             int FOVCullingHookLength = Memory::GetHookLength((char*)FOVCullingAddress, 13);
             FOVCullingReturnJMP = FOVCullingAddress + FOVCullingHookLength;
-            Memory::DetourFunction64((void*)FOVCullingAddress, FOVCulling_CC, FOVCullingHookLength);
+            //Memory::DetourFunction64((void*)FOVCullingAddress, FOVCulling_CC, FOVCullingHookLength);
 
             LOG_F(INFO, "FOV Culling: Hook length is %d bytes", FOVCullingHookLength);
             LOG_F(INFO, "FOV Culling: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVCullingAddress);
