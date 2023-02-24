@@ -13,6 +13,9 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 - Grab the latest release of IshinFix from [here.](https://github.com/Lyall/IshinFix/releases)
 - Extract the contents of the release zip in to the the Win64 folder.<br />(e.g. "**steamapps\common\LikeADragonIshin\LikeaDragonIshin\Binaries\Win64**" for Steam).
 
+### Linux/Steam Deck
+- Make sure you set the Steam launch options to `WINEDLLOVERRIDES="winmm.dll=n,b" %command%`
+
 ## Configuration
 - See **IshinFix.ini** to adjust settings for the fix.
 
