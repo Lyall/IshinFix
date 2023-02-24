@@ -9,6 +9,8 @@ HMODULE baseModule = GetModuleHandle(NULL);
 bool bAspectFix;
 bool bFOVFix;
 bool bCutsceneFPS;
+bool bControllerType;
+uint8_t iControllerType;
 int iCustomResX;
 int iCustomResY;
 int iInjectionDelay;
@@ -25,7 +27,7 @@ float fNewAspect;
 string sExeName;
 string sGameName;
 string sExePath;
-string sFixVer = "1.0.3";
+string sFixVer = "1.0.4";
 
 // CurrResolution Hook
 DWORD64 CurrResolutionReturnJMP;
@@ -158,6 +160,24 @@ void __declspec(naked) FOVCulling_CC()
     }
 }
 
+// Controller Glyph Hook
+DWORD64 ControllerTypeReturnJMP;
+void __declspec(naked) ControllerType_CC()
+{
+    __asm
+    {
+        mov[rax + 0x000000E8], sil              // Original code
+        mov[rax + 0x00000108], sil              // Original code
+        cmp bl, 03
+        jne modifyGlyphs
+        jmp [ControllerTypeReturnJMP]
+
+        modifyGlyphs:
+            mov bl, iControllerType
+            jmp [ControllerTypeReturnJMP]
+    }
+}
+
 void Logging()
 {
     loguru::add_file("IshinFix.log", loguru::Truncate, loguru::Verbosity_MAX);
@@ -183,6 +203,8 @@ void ReadConfig()
     bFOVFix = config.GetBoolean("Fix FOV", "Enabled", true);
     fAdditionalFOV = config.GetFloat("Fix FOV", "AdditionalFOV", (float)0);
     bCutsceneFPS = config.GetBoolean("Remove Cutscene FPS Cap", "Enabled", false);
+    bControllerType = config.GetBoolean("Override Controller Icons", "Enabled", false);
+    iControllerType = config.GetInteger("Override Controller Icons", "Type", 0);
 
     // Get game name and exe path
     LPWSTR exePath = new WCHAR[_MAX_PATH];
@@ -221,6 +243,8 @@ void ReadConfig()
     LOG_F(INFO, "Config Parse: bFOVFix: %d", bFOVFix);
     LOG_F(INFO, "Config Parse: fAdditionalFOV: %.2f", fAdditionalFOV);
     LOG_F(INFO, "Config Parse: bCutsceneFPS: %d", bCutsceneFPS);
+    LOG_F(INFO, "Config Parse: bControllerType: %d", bControllerType);
+    LOG_F(INFO, "Config Parse: iControllerType: %d", iControllerType);
     LOG_F(INFO, "Config Parse: iCustomResX: %d", iCustomResX);
     LOG_F(INFO, "Config Parse: iCustomResY: %d", iCustomResY);
     LOG_F(INFO, "Config Parse: fNewX: %.2f", fNewX);
@@ -348,6 +372,28 @@ void CutsceneFPS()
     }
 }
 
+void ControllerType()
+{
+    if (bControllerType)
+    {
+        uint8_t* ControllerTypeScanResult = Memory::PatternScan(baseModule, "40 88 ?? ?? ?? ?? ?? 40 88 ?? ?? ?? ?? ?? 48 ?? ?? 0F 84 ?? ?? ?? ??");
+        if (ControllerTypeScanResult)
+        {
+            DWORD64 ControllerTypeAddress = (uintptr_t)ControllerTypeScanResult;
+            int ControllerTypeHookLength = Memory::GetHookLength((char*)ControllerTypeAddress, 13);
+            ControllerTypeReturnJMP = ControllerTypeAddress + ControllerTypeHookLength;
+            Memory::DetourFunction64((void*)ControllerTypeAddress, ControllerType_CC, ControllerTypeHookLength);
+
+            LOG_F(INFO, "Controller Icons: Hook length is %d bytes", ControllerTypeHookLength);
+            LOG_F(INFO, "Controller Icons: Hook address is 0x%" PRIxPTR, (uintptr_t)ControllerTypeAddress);
+        }
+        else if (!ControllerTypeScanResult)
+        {
+            LOG_F(INFO, "Controller Icons: Pattern scan failed.");
+        }
+    }
+}
+
 DWORD __stdcall Main(void*)
 {
     Logging();
@@ -355,6 +401,7 @@ DWORD __stdcall Main(void*)
     Sleep(iInjectionDelay);
     AspectFOVFix();
     CutsceneFPS();
+    ControllerType();
     return true; // end thread
 }
 
@@ -367,7 +414,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
     {
-        CreateThread(NULL, 0, Main, 0, NULL, 0);
+        HANDLE mainHandle = CreateThread(NULL, 0, Main, 0, NULL, 0);
+
+        if (mainHandle)
+        {
+            CloseHandle(mainHandle);
+        }
     }
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:
