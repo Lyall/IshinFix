@@ -5,6 +5,8 @@ using namespace std;
 
 HMODULE baseModule = GetModuleHandle(NULL);
 
+inipp::Ini<char> ini;
+
 // INI Variables
 bool bAspectFix;
 bool bFOVFix;
@@ -36,10 +38,11 @@ void __declspec(naked) CurrResolution_CC()
 {
     __asm
     {
-        mov ecx, 276                           // Original code
         mov r12d, r9d                          // Original code
         mov rbx, rdx                           // Original code
         mov rdi, [rax + r8 * 0x8]              // Original code
+        add rdi, rcx                           // Original code
+        mov eax, [rdi]                         // Original code
 
         mov[iCustomResX], r15d                 // Grab current resX
         mov[iCustomResY], r12d                 // Grab current resY
@@ -204,7 +207,6 @@ void ReadConfig()
 
     // Initialize config
     // UE4 games use launchers so config path is relative to launcher
-    inipp::Ini<char> ini;
     if (sExePath.find("WinGDK") != string::npos)
     {
         sGameVersion = "Microsoft Store";
@@ -231,7 +233,6 @@ void ReadConfig()
             ini.parse(iniFile);
         }
     }
-
     LOG_F(INFO, "Game Version: %s", sGameVersion.c_str());
 
     inipp::get_value(ini.sections["IshinFix Parameters"], "InjectionDelay", iInjectionDelay);
@@ -285,10 +286,10 @@ void AspectFOVFix()
         uint8_t* CurrResolutionScanResult = Memory::PatternScan(baseModule, "33 ?? B9 ?? ?? ?? ?? 45 ?? ?? 48 ?? ?? 4A ?? ?? ?? 48 ?? ?? 8B ??");
         if (CurrResolutionScanResult)
         {
-            DWORD64 CurrResolutionAddress = (uintptr_t)CurrResolutionScanResult + 0x2;
+            DWORD64 CurrResolutionAddress = (uintptr_t)CurrResolutionScanResult + 0x7;
             int CurrResolutionHookLength = Memory::GetHookLength((char*)CurrResolutionAddress, 13);
             CurrResolutionReturnJMP = CurrResolutionAddress + CurrResolutionHookLength;
-            //Memory::DetourFunction64((void*)CurrResolutionAddress, CurrResolution_CC, CurrResolutionHookLength);
+            Memory::DetourFunction64((void*)CurrResolutionAddress, CurrResolution_CC, CurrResolutionHookLength);
 
             LOG_F(INFO, "Current Resolution: Hook length is %d bytes", CurrResolutionHookLength);
             LOG_F(INFO, "Current Resolution: Hook address is 0x%" PRIxPTR, (uintptr_t)CurrResolutionAddress);
