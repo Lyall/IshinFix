@@ -5,20 +5,18 @@ using namespace std;
 
 HMODULE baseModule = GetModuleHandle(NULL);
 
-INIReader config;
-
 // INI Variables
 bool bAspectFix;
 bool bFOVFix;
 bool bCutsceneFPS;
 bool bControllerType;
-uint8_t iControllerType;
+int iControllerType;
 int iCustomResX;
 int iCustomResY;
 int iInjectionDelay;
 float fAdditionalFOV;
-int iAspectFix = (int)bAspectFix;
-int iFOVFix = (int)bFOVFix;
+int iAspectFix;
+int iFOVFix;
 
 // Variables
 float fNewX;
@@ -165,6 +163,7 @@ void __declspec(naked) FOVCulling_CC()
 
 // Controller Glyph Hook
 DWORD64 ControllerTypeReturnJMP;
+uint8_t iControllerGlyph;
 void __declspec(naked) ControllerType_CC()
 {
     __asm
@@ -176,7 +175,7 @@ void __declspec(naked) ControllerType_CC()
         jmp [ControllerTypeReturnJMP]
 
         modifyGlyphs:
-            mov bl, iControllerType
+            mov bl, iControllerGlyph
             jmp [ControllerTypeReturnJMP]
     }
 }
@@ -205,31 +204,45 @@ void ReadConfig()
 
     // Initialize config
     // UE4 games use launchers so config path is relative to launcher
+    inipp::Ini<char> ini;
     if (sExePath.find("WinGDK") != string::npos)
     {
         sGameVersion = "Microsoft Store";
-        INIReader config(".\\LikeaDragonIshin\\Binaries\\WinGDK\\IshinFix.ini");
+        std::ifstream iniFile(".\\LikeaDragonIshin\\Binaries\\WinGDK\\IshinFix.ini");
+        if (!iniFile)
+        {
+            LOG_F(ERROR, "Failed to load config file. (Microsoft Store)");
+        }
+        else
+        {
+            ini.parse(iniFile);
+        } 
     }
     else
     {
         sGameVersion = "Steam";
-        INIReader config(".\\LikeaDragonIshin\\Binaries\\Win64\\IshinFix.ini");
+        std::ifstream iniFile(".\\LikeaDragonIshin\\Binaries\\Win64\\IshinFix.ini");
+        if (!iniFile)
+        {
+            LOG_F(ERROR, "Failed to load config file. (Steam)");
+        }
+        else
+        {
+            ini.parse(iniFile);
+        }
     }
+
     LOG_F(INFO, "Game Version: %s", sGameVersion.c_str());
 
-    // Check if config failed to load
-    if (config.ParseError() != 0) {
-        LOG_F(ERROR, "Can't load config file");
-        LOG_F(ERROR, "Parse error: %d", config.ParseError());
-    }
-
-    iInjectionDelay = config.GetInteger("IshinFix Parameters", "InjectionDelay", 1000);
-    bAspectFix = config.GetBoolean("Fix Aspect Ratio", "Enabled", true);
-    bFOVFix = config.GetBoolean("Fix FOV", "Enabled", true);
-    fAdditionalFOV = config.GetFloat("Fix FOV", "AdditionalFOV", (float)0);
-    bCutsceneFPS = config.GetBoolean("Remove Cutscene FPS Cap", "Enabled", false);
-    bControllerType = config.GetBoolean("Override Controller Icons", "Enabled", false);
-    iControllerType = config.GetInteger("Override Controller Icons", "Type", 0);
+    inipp::get_value(ini.sections["IshinFix Parameters"], "InjectionDelay", iInjectionDelay);
+    inipp::get_value(ini.sections["Fix Aspect Ratio"], "Enabled", bAspectFix);
+    iAspectFix = (int)bAspectFix;
+    inipp::get_value(ini.sections["Fix FOV"], "Enabled", bFOVFix);
+    iFOVFix = (int)bFOVFix;
+    inipp::get_value(ini.sections["Fix FOV"], "AdditionalFOV", fAdditionalFOV);
+    inipp::get_value(ini.sections["Remove Cutscene FPS Cap"], "Enabled", bCutsceneFPS);
+    inipp::get_value(ini.sections["Override Controller Icons"], "Enabled", bControllerType);
+    inipp::get_value(ini.sections["Override Controller Icons"], "Type", iControllerType);
 
     // Custom resolution
     if (iCustomResX > 0 && iCustomResY > 0)
@@ -283,16 +296,6 @@ void AspectFOVFix()
         else if (!CurrResolutionScanResult)
         {
             LOG_F(INFO, "Current Resolution: Pattern scan failed.");
-        }
-
-        // Dumb
-        if (bAspectFix)
-        {
-            iAspectFix = 1;
-        }
-        if (bFOVFix)
-        {
-            iFOVFix = 1;
         }
 
         uint8_t* AspectFOVFixScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F3 0F ?? ?? ?? 8B ?? ?? ?? ?? ?? 89 ?? ?? 0F ?? ?? ?? ?? ?? ?? 33 ?? ?? 83 ?? ??");
@@ -392,6 +395,7 @@ void ControllerType()
         uint8_t* ControllerTypeScanResult = Memory::PatternScan(baseModule, "40 88 ?? ?? ?? ?? ?? 40 88 ?? ?? ?? ?? ?? 48 ?? ?? 0F 84 ?? ?? ?? ??");
         if (ControllerTypeScanResult)
         {
+            iControllerGlyph = (uint8_t)iControllerType;
             DWORD64 ControllerTypeAddress = (uintptr_t)ControllerTypeScanResult;
             int ControllerTypeHookLength = Memory::GetHookLength((char*)ControllerTypeAddress, 13);
             ControllerTypeReturnJMP = ControllerTypeAddress + ControllerTypeHookLength;

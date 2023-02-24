@@ -4,6 +4,6 @@
 [submodule "src/external/loguru"]
 	path = src/external/loguru
 	url = https://github.com/emilk/loguru
-[submodule "src/external/inih"]
-	path = src/external/inih
-	url = https://github.com/jtilly/inih
+[submodule "src/external/inipp"]
+	path = src/external/inipp
+	url = https://github.com/mcmtroffaes/inipp
