@@ -157,13 +157,13 @@ void __declspec(naked) LetterboxMS_CC()
     {
         cmp[iLetterboxCounter], 0               // Compare loop counter
         je originalCode                         // jmp to original code if loop done
-        cmp byte ptr[r14 + 0x6C], 03            // compare draw flag
+        cmp byte ptr[r15 + 0x6C], 03            // compare draw flag
         je disableLetterbox                     // jmp to disable letterbox loop
         jmp originalCode                        // jmp just in case
 
         disableLetterbox :
         dec[iLetterboxCounter]                  // Decrease loop count down from 4
-            mov byte ptr[r14 + 0x6C], 00        // Set draw flag to 0
+            mov byte ptr[r15 + 0x6C], 00        // Set draw flag to 0
             jmp originalCode                    // jmp and carry on
 
         originalCode :
