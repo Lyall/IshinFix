@@ -7,6 +7,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
 - Disable cutscene FPS cap. This removes the 30fps cap in cutscenes.
+- Controller icon override. This lets you force PS4/PS5/XBOX controller icons.
 
 ## Installation
 - **Note:** ***Please make sure any ultrawide-related hex edits or pak mods are removed/reverted first***.
@@ -21,6 +22,9 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 
 ## Known Issues
 Please report any issues you see.
+
+- Brothel "Sensual Healing" minigame has visual bugs. (#4)<br>
+This is a known bug in the game at wider than 16:9 resolutions and not related to IshinFix.
 
 ## Screenshots
 
