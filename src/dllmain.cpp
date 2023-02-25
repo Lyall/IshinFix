@@ -150,6 +150,29 @@ void __declspec(naked) Letterbox_CC()
     }
 }
 
+// Letterbox Hook (Microsoft Store)
+void __declspec(naked) LetterboxMS_CC()
+{
+    __asm
+    {
+        cmp[iLetterboxCounter], 0               // Compare loop counter
+        je originalCode                         // jmp to original code if loop done
+        cmp byte ptr[r14 + 0x6C], 03            // compare draw flag
+        je disableLetterbox                     // jmp to disable letterbox loop
+        jmp originalCode                        // jmp just in case
+
+        disableLetterbox :
+        dec[iLetterboxCounter]                  // Decrease loop count down from 4
+            mov byte ptr[r14 + 0x6C], 00        // Set draw flag to 0
+            jmp originalCode                    // jmp and carry on
+
+        originalCode :
+            mov r13d, [rbp + 0x000000e8]        // Original code
+            mov[rsp + 0x00000178], r12          // Original code
+            jmp[LetterboxReturnJMP]
+    }
+}
+
 // FOV Culling Hook
 DWORD64 FOVCullingReturnJMP;
 float fOne = (float)1;
@@ -160,6 +183,19 @@ void __declspec(naked) FOVCulling_CC()
         movss xmm1, [fOne]                      // 90/90, there is undoubtedly a smarter way of doing this
         movss[rdx + 0x00000310], xmm1           // Original code
         movsd xmm0, [rbp + 0x000000E0]          // Original code
+        jmp[FOVCullingReturnJMP]
+    }
+}
+
+// FOV Culling Hook (Microsoft Store)
+void __declspec(naked) FOVCullingMS_CC()
+{
+    __asm
+    {
+        movss xmm1, [fOne]                      // 90/90, there is undoubtedly a smarter way of doing this
+        movss[rdx + 0x00000310], xmm1           // Original code
+        xor r8d,r8d                             // Original code
+        movsd xmm0, [rbp+0xD0]                  // Original code
         jmp[FOVCullingReturnJMP]
     }
 }
@@ -340,7 +376,15 @@ void AspectFOVFix()
             DWORD64 LetterboxAddress = (uintptr_t)LetterboxScanResult;
             int LetterboxHookLength = Memory::GetHookLength((char*)LetterboxAddress, 13);
             LetterboxReturnJMP = LetterboxAddress + LetterboxHookLength;
-            //Memory::DetourFunction64((void*)LetterboxAddress, Letterbox_CC, LetterboxHookLength);
+
+            if (sGameVersion == "Steam")
+            {
+                Memory::DetourFunction64((void*)LetterboxAddress, Letterbox_CC, LetterboxHookLength);
+            }
+            else if (sGameVersion == "Microsoft Store")
+            {
+                Memory::DetourFunction64((void*)LetterboxAddress, LetterboxMS_CC, LetterboxHookLength);
+            }
 
             LOG_F(INFO, "Letterbox: Hook length is %d bytes", LetterboxHookLength);
             LOG_F(INFO, "Letterbox: Hook address is 0x%" PRIxPTR, (uintptr_t)LetterboxAddress);
@@ -353,16 +397,29 @@ void AspectFOVFix()
 
     if (bFOVFix)
     {
-        uint8_t* FOVCullingScanResult = Memory::PatternScan(baseModule, "F3 0F ?? ?? ?? ?? ?? ?? F2 0F ?? ?? ?? ?? ?? ?? 8B ?? ?? ?? ?? ?? F2 0F ?? ?? ?? ?? 89 ?? ?? ?? 84 ?? 75 ??");
+        uint8_t* FOVCullingScanResult = Memory::PatternScan(baseModule, "8B ?? ?? ?? ?? ?? F2 ?? ?? ?? ?? ?? 89 ?? ?? ?? 84 ?? 75 ??");
         if (FOVCullingScanResult)
         {
-            DWORD64 FOVCullingAddress = (uintptr_t)FOVCullingScanResult;
-            int FOVCullingHookLength = Memory::GetHookLength((char*)FOVCullingAddress, 13);
-            FOVCullingReturnJMP = FOVCullingAddress + FOVCullingHookLength;
-            //Memory::DetourFunction64((void*)FOVCullingAddress, FOVCulling_CC, FOVCullingHookLength);
+            if (sGameVersion == "Steam")
+            {
+                DWORD64 FOVCullingAddress = (uintptr_t)FOVCullingScanResult - 0x10;
+                int FOVCullingHookLength = Memory::GetHookLength((char*)FOVCullingAddress, 13);
+                FOVCullingReturnJMP = FOVCullingAddress + FOVCullingHookLength;
+                Memory::DetourFunction64((void*)FOVCullingAddress, FOVCulling_CC, FOVCullingHookLength);
 
-            LOG_F(INFO, "FOV Culling: Hook length is %d bytes", FOVCullingHookLength);
-            LOG_F(INFO, "FOV Culling: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVCullingAddress);
+                LOG_F(INFO, "FOV Culling: Hook length is %d bytes", FOVCullingHookLength);
+                LOG_F(INFO, "FOV Culling: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVCullingAddress);
+            }
+            else if (sGameVersion == "Microsoft Store")
+            {
+                DWORD64 FOVCullingAddress = (uintptr_t)FOVCullingScanResult - 0x13;
+                int FOVCullingHookLength = Memory::GetHookLength((char*)FOVCullingAddress, 13);
+                FOVCullingReturnJMP = FOVCullingAddress + FOVCullingHookLength;
+                Memory::DetourFunction64((void*)FOVCullingAddress, FOVCullingMS_CC, FOVCullingHookLength);
+
+                LOG_F(INFO, "FOV Culling: Hook length is %d bytes", FOVCullingHookLength);
+                LOG_F(INFO, "FOV Culling: Hook address is 0x%" PRIxPTR, (uintptr_t)FOVCullingAddress);
+            }
         }
         else if (!FOVCullingScanResult)
         {
