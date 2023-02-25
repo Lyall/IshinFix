@@ -208,15 +208,11 @@ void __declspec(naked) ControllerType_CC()
 {
     __asm
     {
-        mov[rax + 0x000000E8], sil              // Original code
-        mov[rax + 0x00000108], sil              // Original code
-        cmp bl, 03
-        jne modifyGlyphs
+        mov rdx, rdi                            // Original code
+        lea rcx, [rsp + 0x00000080]             // Original code
+        cmovne rdx, [rsp + 0x30]                // Original code
+        mov bl, iControllerGlyph
         jmp [ControllerTypeReturnJMP]
-
-        modifyGlyphs:
-            mov bl, iControllerGlyph
-            jmp [ControllerTypeReturnJMP]
     }
 }
 
@@ -451,7 +447,7 @@ void ControllerType()
 {
     if (bControllerType)
     {
-        uint8_t* ControllerTypeScanResult = Memory::PatternScan(baseModule, "40 88 ?? ?? ?? ?? ?? 40 88 ?? ?? ?? ?? ?? 48 ?? ?? 0F 84 ?? ?? ?? ??");
+        uint8_t* ControllerTypeScanResult = Memory::PatternScan(baseModule, "48 ?? ?? 48 8D ?? ?? ?? ?? ?? ?? 48 0F ?? ?? ?? ?? 45 ?? ?? E8 ?? ?? ?? ??");
         if (ControllerTypeScanResult)
         {
             iControllerGlyph = (uint8_t)iControllerType;
