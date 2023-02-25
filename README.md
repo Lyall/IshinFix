@@ -23,7 +23,7 @@ This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays 
 ## Known Issues
 Please report any issues you see.
 
-- Brothel "Sensual Healing" minigame has visual bugs. (#4)<br>
+- Brothel "Sensual Healing" minigame has visual bugs. [(#4)](https://github.com/Lyall/IshinFix/issues/4)<br>
 This is a known bug in the game at wider than 16:9 resolutions and not related to IshinFix.
 
 ## Screenshots
