@@ -6,7 +6,7 @@ This is a fix to remove pillarboxing/letterboxing in Like a Dragon: Ishin!
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
-- Correct FOV scaling behaviour at wider than 16:9 or narrower than 16:9.
+- Correct FOV scaling no matter what resolution you use.
 - Disable cutscene FPS cap. This removes the 30fps cap in cutscenes.
 - Controller icon override. This lets you force PS4/PS5/XBOX controller icons.
 
