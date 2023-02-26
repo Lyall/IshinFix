@@ -65,9 +65,12 @@ void __declspec(naked) AspectFOVFix_CC()
 {
     __asm
     {
-        cmp [iFOVFix], 1
-        je modifyFOV
-        jmp originalCode
+        mov eax, [fNewAspect]                  // Move new aspect to eax
+        cmp eax, [fNativeAspect]               // Compare new aspect to native
+        jle originalCode                       // Skip FOV fix if fNewAspect<=fNativeAspect
+        cmp [iFOVFix], 1                       // Check if FOVFix is enabled
+        je modifyFOV                           // jmp to FOV fix
+        jmp originalCode                       // jmp to originalCode
 
         modifyFOV:
             fld dword ptr[rbx + 0x1F8]         // Push original FOV to FPU register st(0)
