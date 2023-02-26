@@ -2,10 +2,11 @@
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)</br>
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/IshinFix/total.svg)](https://github.com/Lyall/IshinFix/releases)
 
-This is a fix to remove pillarboxing/letterboxing with ultrawide/wider displays in Like a Dragon: Ishin!
+This is a fix to remove pillarboxing/letterboxing in Like a Dragon: Ishin!
 
 ## Features
 - Removes pillarboxing/letterboxing in gameplay and cutscenes.
+- Correct FOV scaling no matter what resolution you use.
 - Disable cutscene FPS cap. This removes the 30fps cap in cutscenes.
 - Controller icon override. This lets you force PS4/PS5/XBOX controller icons.
 
